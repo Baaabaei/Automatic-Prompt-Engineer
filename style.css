@@ -1,0 +1,94 @@
+/* style.css */
+
+/* Hide the default Streamlit branding */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* General body styling */
+body {
+    background-color: #0F1116;
+}
+
+/* Custom card styling */
+.card {
+    background-color: #1E2027;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 10px 0;
+    border: 1px solid #333;
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0 15px rgba(0, 246, 229, 0.3); /* Glow effect on hover */
+}
+
+/* Call to action button styling */
+.stButton>button {
+    background-color: #00F6E5;
+    color: #0F1116; /* Dark text on bright button */
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 16px;
+    width: 100%; /* Make buttons full-width within their container */
+    transition: background-color 0.3s ease;
+}
+
+.stButton>button:hover {
+    background-color: #00D1C1; /* Slightly darker shade on hover */
+}
+
+/* Styling for titles and headers */
+h1, h2, h3 {
+    color: #FAFAFA;
+}
+
+/* Specific styling for the hero section headline */
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    text-align: center;
+    color: #A1A1A1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Pricing table styling */
+.pricing-card {
+    border: 2px solid #333;
+    text-align: center;
+}
+
+.pricing-card h3 {
+    color: #00F6E5; /* Highlight the plan name */
+    font-size: 1.5rem;
+}
+
+.price {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #FAFAFA;
+}
+
+.price-period {
+    color: #A1A1A1;
+    font-size: 1rem;
+}
+
+.feature-list {
+    text-align: left;
+    margin-top: 20px;
+}
+
+/* Remove padding from columns to make cards fit better */
+[data-testid="stHorizontalBlock"] {
+    gap: 1.5rem;
+}
