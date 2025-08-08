@@ -6,7 +6,7 @@ import uuid
 
 # Configure the page
 st.set_page_config(
-    page_title="PromptCraft Studio",
+    page_title="Prompt Engineer",
     page_icon="🛠️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -167,7 +167,7 @@ def render_login():
     """Simple login/signup page"""
     st.markdown("""
     <div class="auth-container">
-        <h2>Welcome to PromptCraft Studio</h2>
+        <h2>Welcome to Prompt Engineer Studio</h2>
         <p>Sign in to access your prompt engineering workspace</p>
     </div>
     """, unsafe_allow_html=True)
@@ -189,7 +189,7 @@ def render_login():
                 if email and password:
                     st.session_state.logged_in = True
                     st.session_state.current_page = 'studio'
-                    st.success("Welcome to PromptCraft Studio!")
+                    st.success("Welcome to Prompt Engineer Studio!")
                     time.sleep(1)
                     st.rerun()
                 else:
@@ -418,39 +418,37 @@ def main():
     
     # Sidebar navigation
     with st.sidebar:
-        st.markdown("""
-        <div class="logo-section">
-            <h2>:material/build: PromptCraft</h2>
-            <p>Studio</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(""":material/Build: Prompt Engineer """, unsafe_allow_html=True)
         st.logo("Desktop/prompt_engineer/images/logo.png")
         if not st.session_state.logged_in:
             # Public navigation
-            if st.button(":material/home: Home", key="nav_home",type="tertiary", use_container_width=True):
+            if st.button(":material/home: Home", key="nav_home",type="tertiary", use_container_width=False):
                 st.session_state.current_page = 'home'
                 st.rerun()
             
-            if st.button(":material/login: Sign In", key="nav_login", type="tertiary", use_container_width=True):
+            if st.button(":material/login: Sign In", key="nav_login", type="tertiary", use_container_width=False):
                 st.session_state.current_page = 'login'
+                st.rerun()
+            if st.button(":material/web: Blog", key="nav_blog", type="tertiary", use_container_width=False): #Defiiiiiiiiiiiine blog ++++++
+                st.session_state.current_page = 'blog'
                 st.rerun()
         else:
             # Private navigation
-            if st.button(":material/Construction: Prompt Engineer", key="nav_studio", use_container_width=True):
+            if st.button(":material/Construction: Prompt Engineer", key="nav_studio",type="tertiary", use_container_width=False):
                 st.session_state.current_page = 'studio'
                 st.rerun()
             
-            if st.button(":material/folder_open: My Workspace", key="nav_workspace", use_container_width=True):
+            if st.button(":material/folder_open: My Workspace", key="nav_workspace",type="tertiary", use_container_width=False):
                 st.session_state.current_page = 'workspace'
                 st.rerun()
             
-            if st.button(":material/library_books: Templates", key="nav_templates", use_container_width=True):
+            if st.button(":material/library_books: Templates", key="nav_templates", type="tertiary", use_container_width=False):
                 st.session_state.current_page = 'templates'
                 st.rerun()
             
             st.markdown("---")
             
-            if st.button(":material/logout: Sign Out", key="nav_logout"):
+            if st.button(":material/logout: Sign Out", type="tertiary", key="nav_logout"):
                 st.session_state.logged_in = False
                 st.session_state.current_page = 'home'
                 st.rerun()
