@@ -3,6 +3,7 @@ import json
 import time
 from datetime import datetime
 import uuid
+from openai import OpenAI
 
 # Configure the page
 st.set_page_config(
@@ -21,6 +22,14 @@ try:
     load_css()
 except FileNotFoundError:
     st.warning("CSS file not found. Using default styling.")
+
+def init_openai():
+    # Initialize the OpenAI client to connect to Ollama
+    client = OpenAI(
+        base_url='http://localhost:11434/v1',
+        api_key='ollama',  # required, but can be any string
+    )
+    return client
 
 # Initialize session state
 if 'logged_in' not in st.session_state:
@@ -203,7 +212,7 @@ def render_prompt_studio():
         <p>Build and refine your prompts with precision</p>
     </div>
     """, unsafe_allow_html=True)
-    
+    client = init_openai()
     # Create two columns for the interface
     col1, col2 = st.columns([3, 2])
     
@@ -322,14 +331,33 @@ def render_prompt_studio():
             
             with col_test:
                 if st.button(":material/play_arrow: Test Prompt", use_container_width=True):
-                    with st.spinner("Testing prompt..."):
-                        time.sleep(2)  # Simulate API call
-                        st.success("Test completed!")
-                        st.markdown("**Sample Output:**")
-                        if output_format == "JSON":
-                            st.json({"status": "success", "message": "This is a sample response"})
-                        else:
-                            st.write("This is a sample response from your prompt.")
+                    if not final_prompt:
+                        st.warning("Please generate a prompt first.")
+                    else:
+                        with st.spinner("Testing prompt..."):
+                            try:
+                                response = client.chat.completions.create(
+                                    model="gemma3:1b",  # Or another model you have installed
+                                    messages=[
+                                        {"role": "system", "content": final_prompt},
+                                        {"role": "user", "content": "Please generate a response based on the prompt."}
+                                    ]
+                                )
+                                st.success("Test completed!")
+                                st.markdown("**Sample Output:**")
+                                
+                                # Display the response from Ollama
+                                if output_format == "JSON":
+                                    try:
+                                        # Attempt to parse and display the response as JSON
+                                        st.json(json.loads(response.choices[0].message.content))
+                                    except json.JSONDecodeError:
+                                        # If it's not valid JSON, display it as plain text
+                                        st.code(response.choices[0].message.content, language="text")
+                                else:
+                                    st.code(response.choices[0].message.content, language="markdown")
+                            except Exception as e:
+                                st.error(f"An error occurred: {e}")
 
 def render_workspace():
     """Saved prompts workspace"""
