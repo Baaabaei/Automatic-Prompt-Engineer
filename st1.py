@@ -31,13 +31,60 @@ def init_openai():
     )
     return client
 
-# Initialize session state
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-if 'saved_prompts' not in st.session_state:
-    st.session_state.saved_prompts = []
-if 'current_page' not in st.session_state:
-    st.session_state.current_page = 'home'
+def init_session_state():
+    # Initialize session state
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+    if 'saved_prompts' not in st.session_state:
+        st.session_state.saved_prompts = []
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = 'home'
+
+def sidebar():
+    # Sidebar navigation
+    with st.sidebar:
+        st.markdown(""":material/Build: Prompt Engineer """, unsafe_allow_html=True)
+        st.logo("https://github.com/Baaabaei/Automatic-Prompt-Engineer/blob/main/logo.png")
+        if not st.session_state.logged_in:
+            # Public navigation
+            if st.button(":material/home: Home", key="nav_home",type="tertiary", use_container_width=False):
+                st.session_state.current_page = 'home'
+                st.rerun()
+            
+            if st.button(":material/login: Sign In", key="nav_login", type="tertiary", use_container_width=False):
+                st.session_state.current_page = 'login'
+                st.rerun()
+            if st.button(":material/web: Blog", key="nav_blog", type="tertiary", use_container_width=False): #Defiiiiiiiiiiiine blog ++++++
+                st.session_state.current_page = 'blog'
+                st.rerun()
+        else:
+            # Private navigation
+            if st.button(":material/Construction: Prompt Engineer", key="nav_studio",type="tertiary", use_container_width=False):
+                st.session_state.current_page = 'studio'
+                st.rerun()
+            
+            if st.button(":material/folder_open: My Workspace", key="nav_workspace",type="tertiary", use_container_width=False):
+                st.session_state.current_page = 'workspace'
+                st.rerun()
+            
+            if st.button(":material/library_books: Templates", key="nav_templates", type="tertiary", use_container_width=False):
+                st.session_state.current_page = 'templates'
+                st.rerun()
+            
+            st.markdown("---")
+            
+            if st.button(":material/logout: Sign Out", type="tertiary", key="nav_logout"):
+                st.session_state.logged_in = False
+                st.session_state.current_page = 'home'
+                st.rerun()
+        
+        # Footer
+        st.markdown("---")
+        st.markdown("""
+        <div class="sidebar-footer">
+            <small>Built for LLM Engineers<br>by LLM Engineers</small>
+        </div>
+        """, unsafe_allow_html=True)
 
 # Sample prompt templates
 TEMPLATE_LIBRARY = {
@@ -206,9 +253,10 @@ def render_login():
 
 def render_prompt_studio():
     """Main prompt engineering interface"""
+    
+    st.header(":material/construction: Prompt Engineer")
     st.markdown("""
     <div class="studio-header">
-        <h1>:material/construction: Prompt Engineer</h1>
         <p>Build and refine your prompts with precision</p>
     </div>
     """, unsafe_allow_html=True)
@@ -225,19 +273,14 @@ def render_prompt_studio():
             key="goal_input"
         )
         
-        st.markdown("### :material/database: Context & Data")
-        context = st.text_area(
-            "Paste relevant data, documentation, or examples",
-            placeholder="Add your documentation, examples, or any context the bot should reference...",
-            height=150,
-            key="context_input"
-        )
+        
         
         st.markdown("### :material/tune: Refinement Controls")
         
         # Persona setting
-        col_a, col_b = st.columns(2)
-        with col_a:
+        # col_a, col_b = st.columns(2)
+        with st.container(horizontal=True):
+        # with col_a:
             persona = st.selectbox(
                 ":material/person: Persona",
                 ["Helpful assistant", "Senior software engineer", "Customer support agent", "Technical writer", "Data analyst", "Custom..."],
@@ -246,7 +289,7 @@ def render_prompt_studio():
             if persona == "Custom...":
                 persona = st.text_input("Custom persona", placeholder="Act as a...")
         
-        with col_b:
+        # with col_b:
             tone = st.selectbox(
                 ":material/mood: Tone",
                 ["Professional", "Friendly", "Technical", "Casual", "Formal"],
@@ -259,6 +302,16 @@ def render_prompt_studio():
             ["Plain Text", "JSON", "Markdown", "Code Block", "XML", "CSV"],
             key="format_select"
         )
+        
+    with col2:
+        st.markdown("### :material/database: Context & Data")
+        context = st.text_area(
+            "Paste relevant data, documentation, or examples",
+            placeholder="Add your documentation, examples, or any context the bot should reference...",
+            height=100,
+            key="context_input"
+        )
+
         
         # Task-specific modules
         st.markdown("### :material/extension: Task-Specific Modules")
@@ -274,90 +327,89 @@ def render_prompt_studio():
             if classification:
                 categories = st.text_input("Categories", placeholder="urgent, normal, low priority")
     
-    with col2:
-        st.markdown("### :material/preview: Live Preview")
+
+    st.markdown("### :material/preview: Live Preview")
+    # Generate the prompt based on inputs
+    if goal:
+        prompt_parts = []
         
-        # Generate the prompt based on inputs
-        if goal:
-            prompt_parts = []
-            
-            # Add persona
-            if persona and persona != "Helpful assistant":
-                prompt_parts.append(f"You are {persona.lower()}.")
-            
-            # Add main instruction
-            prompt_parts.append(f"Your task: {goal}")
-            
-            # Add context if provided
-            if context:
-                prompt_parts.append(f"\nUse this context:\n{context}")
-            
-            # Add format instruction
-            if output_format != "Plain Text":
-                prompt_parts.append(f"\nProvide your response in {output_format} format.")
-            
-            # Add tone instruction
-            if tone != "Professional":
-                prompt_parts.append(f"Use a {tone.lower()} tone.")
-            
-            # Add task-specific instructions
-            if data_extraction and 'extraction_fields' in locals():
-                prompt_parts.append(f"\nExtract these specific fields: {extraction_fields}")
-            
-            if classification and 'categories' in locals():
-                prompt_parts.append(f"\nClassify into one of these categories: {categories}")
-            
-            final_prompt = "\n\n".join(prompt_parts)
-            
-            st.code(final_prompt, language="text")
-            
-            # Action buttons
-            col_save, col_test = st.columns(2)
-            
-            with col_save:
-                if st.button(":material/save: Save Prompt", use_container_width=True):
-                    prompt_data = {
-                        'id': str(uuid.uuid4()),
-                        'name': goal[:50] + "..." if len(goal) > 50 else goal,
-                        'prompt': final_prompt,
-                        'created': datetime.now().isoformat(),
-                        'goal': goal,
-                        'persona': persona,
-                        'tone': tone,
-                        'format': output_format
-                    }
-                    st.session_state.saved_prompts.append(prompt_data)
-                    st.success("Prompt saved!")
-            
-            with col_test:
-                if st.button(":material/play_arrow: Test Prompt", use_container_width=True):
-                    if not final_prompt:
-                        st.warning("Please generate a prompt first.")
-                    else:
-                        with st.spinner("Testing prompt..."):
-                            try:
-                                response = client.chat.completions.create(
-                                    model="gemma3:1b",  # Or another model you have installed
-                                    messages=[
-                                        {"role": "system", "content": final_prompt},
-                                        {"role": "user", "content": "Please generate a response based on the prompt."}
-                                    ]
-                                )
-                                st.success("Test completed!")
-                                st.markdown("**Sample Output:**")
-                                
-                                # Display the response from Ollama
-                                if output_format == "JSON":
-                                    try:
-                                        # Attempt to parse and display the response as JSON
-                                        st.json(json.loads(response.choices[0].message.content))
-                                    except json.JSONDecodeError:
-                                        # If it's not valid JSON, display it as plain text
-                                        st.code(response.choices[0].message.content, language="text")
-                                else:
-                                    st.code(response.choices[0].message.content, language="markdown")
-                            except Exception as e:
-                                st.error(f"An error occurred: {e}")
+        # Add persona
+        if persona and persona != "Helpful assistant":
+            prompt_parts.append(f"You are {persona.lower()}.")
+        
+        # Add main instruction
+        prompt_parts.append(f"Your task: {goal}")
+        
+        # Add context if provided
+        if context:
+            prompt_parts.append(f"\nUse this context:\n{context}")
+        
+        # Add format instruction
+        if output_format != "Plain Text":
+            prompt_parts.append(f"\nProvide your response in {output_format} format.")
+        
+        # Add tone instruction
+        if tone != "Professional":
+            prompt_parts.append(f"Use a {tone.lower()} tone.")
+        
+        # Add task-specific instructions
+        if data_extraction and 'extraction_fields' in locals():
+            prompt_parts.append(f"\nExtract these specific fields: {extraction_fields}")
+        
+        if classification and 'categories' in locals():
+            prompt_parts.append(f"\nClassify into one of these categories: {categories}")
+        
+        final_prompt = "\n\n".join(prompt_parts)
+        
+        st.code(final_prompt, language="text")
+        
+        # Action buttons
+        col_save, col_test = st.columns(2)
+        
+        with col_save:
+            if st.button(":material/save: Save Prompt", use_container_width=True):
+                prompt_data = {
+                    'id': str(uuid.uuid4()),
+                    'name': goal[:50] + "..." if len(goal) > 50 else goal,
+                    'prompt': final_prompt,
+                    'created': datetime.now().isoformat(),
+                    'goal': goal,
+                    'persona': persona,
+                    'tone': tone,
+                    'format': output_format
+                }
+                st.session_state.saved_prompts.append(prompt_data)
+                st.success("Prompt saved!")
+        
+        with col_test:
+            if st.button(":material/play_arrow: Test Prompt", use_container_width=True):
+                if not final_prompt:
+                    st.warning("Please generate a prompt first.")
+                else:
+                    with st.spinner("Testing prompt..."):
+                        try:
+                            response = client.chat.completions.create(
+                                model="gemma3:1b",  # Or another model you have installed
+                                messages=[
+                                    {"role": "system", "content": final_prompt},
+                                    {"role": "user", "content": "Please generate a response based on the prompt."}
+                                ]
+                            )
+                            st.success("Test completed!")
+                            st.markdown("**Sample Output:**")
+                            
+                            # Display the response from Ollama
+                            if output_format == "JSON":
+                                try:
+                                    # Attempt to parse and display the response as JSON
+                                    st.json(json.loads(response.choices[0].message.content))
+                                except json.JSONDecodeError:
+                                    # If it's not valid JSON, display it as plain text
+                                    st.code(response.choices[0].message.content, language="text")
+                            else:
+                                st.code(response.choices[0].message.content, language="markdown")
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
 
 def render_workspace():
     """Saved prompts workspace"""
@@ -443,52 +495,8 @@ def render_templates():
 
 def main():
     """Main application logic"""
-    
-    # Sidebar navigation
-    with st.sidebar:
-        st.markdown(""":material/Build: Prompt Engineer """, unsafe_allow_html=True)
-        st.logo("Desktop/prompt_engineer/images/logo.png")
-        if not st.session_state.logged_in:
-            # Public navigation
-            if st.button(":material/home: Home", key="nav_home",type="tertiary", use_container_width=False):
-                st.session_state.current_page = 'home'
-                st.rerun()
-            
-            if st.button(":material/login: Sign In", key="nav_login", type="tertiary", use_container_width=False):
-                st.session_state.current_page = 'login'
-                st.rerun()
-            if st.button(":material/web: Blog", key="nav_blog", type="tertiary", use_container_width=False): #Defiiiiiiiiiiiine blog ++++++
-                st.session_state.current_page = 'blog'
-                st.rerun()
-        else:
-            # Private navigation
-            if st.button(":material/Construction: Prompt Engineer", key="nav_studio",type="tertiary", use_container_width=False):
-                st.session_state.current_page = 'studio'
-                st.rerun()
-            
-            if st.button(":material/folder_open: My Workspace", key="nav_workspace",type="tertiary", use_container_width=False):
-                st.session_state.current_page = 'workspace'
-                st.rerun()
-            
-            if st.button(":material/library_books: Templates", key="nav_templates", type="tertiary", use_container_width=False):
-                st.session_state.current_page = 'templates'
-                st.rerun()
-            
-            st.markdown("---")
-            
-            if st.button(":material/logout: Sign Out", type="tertiary", key="nav_logout"):
-                st.session_state.logged_in = False
-                st.session_state.current_page = 'home'
-                st.rerun()
-        
-        # Footer
-        st.markdown("---")
-        st.markdown("""
-        <div class="sidebar-footer">
-            <small>Built for LLM Engineers<br>by LLM Engineers</small>
-        </div>
-        """, unsafe_allow_html=True)
-    
+    init_session_state()
+    sidebar()
     # Main content area
     if st.session_state.current_page == 'home':
         render_homepage()
