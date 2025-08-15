@@ -71,7 +71,8 @@ class PromptEngineApp:
         defaults = {
             'logged_in': False,
             'saved_prompts': [],
-            'current_page': 'home'
+            'current_page': 'home',
+            'generated_prompt': ''  # Store AI-generated prompts
         }
         
         for key, value in defaults.items():
@@ -380,97 +381,114 @@ class PromptEngineApp:
         )
     
     def _render_prompt_preview_and_actions(self, goal: str, context: str, settings: Dict):
-        """Render prompt preview and action buttons"""
-        st.markdown("### :material/preview: Live Preview")
+        """Render prompt generation and action buttons"""
+        st.markdown("### :material/auto_fix_high: AI Prompt Generation")
         
         if goal:
-            final_prompt = self._generate_prompt(goal, context, settings)
-            st.code(final_prompt, language="text")
+            col_generate, col_save = st.columns(2)
             
-            col_save, col_test = st.columns(2)
+            with col_generate:
+                if st.button(":material/psychology: Generate Prompt with AI", use_container_width=True):
+                    self._generate_prompt_with_ai(goal, context, settings)
             
-            with col_save:
-                if st.button(":material/save: Save Prompt", use_container_width=True):
-                    self._save_prompt(goal, final_prompt, settings)
-            
-            with col_test:
-                if st.button(":material/play_arrow: Test Prompt", use_container_width=True):
-                    self._test_prompt(final_prompt, settings['output_format'])
+            # Show generated prompt if it exists
+            if 'generated_prompt' in st.session_state and st.session_state.generated_prompt:
+                st.markdown("### :material/preview: Generated Prompt")
+                st.code(st.session_state.generated_prompt, language="text")
+                
+                with col_save:
+                    if st.button(":material/save: Save Generated Prompt", use_container_width=True):
+                        self._save_prompt(goal, st.session_state.generated_prompt, settings)
+                
+                # Test the generated prompt
+                st.markdown("### :material/play_arrow: Test Generated Prompt")
+                test_input = st.text_input("Enter test input:", placeholder="Type something to test the generated prompt...")
+                
+                if st.button(":material/send: Test Prompt", use_container_width=True) and test_input:
+                    self._test_generated_prompt(st.session_state.generated_prompt, test_input, settings['output_format'])
     
-    def _generate_prompt(self, goal: str, context: str, settings: Dict) -> str:
-        """Generate the final prompt based on inputs"""
-        prompt_parts = []
+    def _generate_prompt_with_ai(self, goal: str, context: str, settings: Dict):
+        """Use Ollama to generate an optimized prompt based on user inputs"""
+        # Create a meta-prompt to generate the actual prompt
+        meta_prompt = self._create_meta_prompt(goal, context, settings)
         
-        # Add persona
-        if settings['persona'] and settings['persona'] != "Helpful assistant":
-            prompt_parts.append(f"You are {settings['persona'].lower()}.")
+        with st.spinner("🤖 AI is crafting your prompt..."):
+            try:
+                response = self.client.chat.completions.create(
+                    model="gemma3:1b",  # You can change this to any model you have installed
+                    messages=[
+                        {"role": "system", "content": "You are an expert prompt engineer. Your job is to create high-quality, effective prompts based on user requirements. Always return ONLY the final prompt without any explanations or metadata."},
+                        {"role": "user", "content": meta_prompt}
+                    ],
+                    temperature=0.7  # Add some creativity to prompt generation
+                )
+                
+                generated_prompt = response.choices[0].message.content.strip()
+                st.session_state.generated_prompt = generated_prompt
+                st.success("🎉 AI has generated your optimized prompt!")
+                
+            except Exception as e:
+                st.error(f"Failed to generate prompt: {e}")
+                st.info("💡 Make sure Ollama is running and the model is available")
+    
+    def _create_meta_prompt(self, goal: str, context: str, settings: Dict) -> str:
+        """Create a meta-prompt to instruct the AI on how to generate the user's prompt"""
+        meta_prompt_parts = []
         
-        # Add main instruction
-        prompt_parts.append(f"Your task: {goal}")
+        meta_prompt_parts.append("Create a professional, effective prompt based on these requirements:")
+        meta_prompt_parts.append(f"\nGOAL: {goal}")
         
-        # Add context if provided
         if context:
-            prompt_parts.append(f"\nUse this context:\n{context}")
+            meta_prompt_parts.append(f"\nCONTEXT TO INCLUDE: {context}")
         
-        # Add format instruction
-        if settings['output_format'] != "Plain Text":
-            prompt_parts.append(f"\nProvide your response in {settings['output_format']} format.")
+        if settings['persona'] != "Helpful assistant":
+            meta_prompt_parts.append(f"\nPERSONA: The AI should act as {settings['persona'].lower()}")
         
-        # Add tone instruction
         if settings['tone'] != "Professional":
-            prompt_parts.append(f"Use a {settings['tone'].lower()} tone.")
+            meta_prompt_parts.append(f"\nTONE: Use a {settings['tone'].lower()} tone")
         
-        # Add task-specific instructions
+        if settings['output_format'] != "Plain Text":
+            meta_prompt_parts.append(f"\nOUTPUT FORMAT: Response must be in {settings['output_format']} format")
+        
         if settings['data_extraction'] and settings['extraction_fields']:
-            prompt_parts.append(f"\nExtract these specific fields: {settings['extraction_fields']}")
+            meta_prompt_parts.append(f"\nDATA EXTRACTION: Must extract these fields: {settings['extraction_fields']}")
         
         if settings['classification'] and settings['categories']:
-            prompt_parts.append(f"\nClassify into one of these categories: {settings['categories']}")
+            meta_prompt_parts.append(f"\nCLASSIFICATION: Must classify into these categories: {settings['categories']}")
         
-        return "\n\n".join(prompt_parts)
-    
-    def _save_prompt(self, goal: str, prompt: str, settings: Dict):
-        """Save the prompt to session state"""
-        prompt_data = {
-            'id': str(uuid.uuid4()),
-            'name': goal[:50] + "..." if len(goal) > 50 else goal,
-            'prompt': prompt,
-            'created': datetime.now().isoformat(),
-            'goal': goal,
-            'persona': settings['persona'],
-            'tone': settings['tone'],
-            'format': settings['output_format']
-        }
-        st.session_state.saved_prompts.append(prompt_data)
-        st.success("Prompt saved!")
-    
-    def _test_prompt(self, prompt: str, output_format: str):
-        """Test the prompt using Ollama"""
-        if not prompt:
-            st.warning("Please generate a prompt first.")
-            return
+        meta_prompt_parts.append("\nCreate a clear, specific, and effective prompt that will reliably achieve the stated goal. Include all necessary instructions and constraints.")
         
-        with st.spinner("Testing prompt..."):
+        return "\n".join(meta_prompt_parts)
+    
+    def _test_generated_prompt(self, prompt: str, test_input: str, output_format: str):
+        """Test the generated prompt with user input"""
+        with st.spinner("Testing your generated prompt..."):
             try:
                 response = self.client.chat.completions.create(
                     model="gemma3:1b",
                     messages=[
                         {"role": "system", "content": prompt},
-                        {"role": "user", "content": "Please generate a response based on the prompt."}
+                        {"role": "user", "content": test_input}
                     ]
                 )
-                st.success("Test completed!")
-                st.markdown("**Sample Output:**")
+                
+                st.success("✅ Test completed!")
+                st.markdown("**AI Response:**")
                 
                 if output_format == "JSON":
                     try:
                         st.json(json.loads(response.choices[0].message.content))
                     except json.JSONDecodeError:
                         st.code(response.choices[0].message.content, language="text")
+                elif output_format == "Code Block":
+                    st.code(response.choices[0].message.content, language="python")
+                elif output_format == "Markdown":
+                    st.markdown(response.choices[0].message.content)
                 else:
-                    st.code(response.choices[0].message.content, language="markdown")
+                    st.code(response.choices[0].message.content, language="text")
+                    
             except Exception as e:
-                st.error(f"An error occurred: {e}")
+                st.error(f"Test failed: {e}")
     
     def render_workspace(self):
         """Render the saved prompts workspace"""
