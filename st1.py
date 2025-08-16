@@ -277,8 +277,9 @@ class PromptEngineApp:
         
         with col2:
             context = self._render_context_input()
-            self._render_prompt_preview_and_actions(goal, context, settings)
-    
+        
+        self._render_prompt_preview_and_actions(goal, context, settings)
+        
     def _render_goal_input(self) -> str:
         """Render the goal input section"""
         st.markdown("### :material/edit_note: Define Your Goal")
@@ -400,6 +401,9 @@ class PromptEngineApp:
                     if st.button(":material/save: Save Generated Prompt", use_container_width=True):
                         self._save_prompt(goal, st.session_state.generated_prompt, settings)
                 
+                if st.button(":material/manufacturing: Improve prompt?"): #===============================>> COLOR = GREEN / CONTINUE THE LOGIC
+                    st.write("please answer these 3 questions")
+                    
                 # Test the generated prompt
                 st.markdown("### :material/play_arrow: Test Generated Prompt")
                 test_input = st.text_input("Enter test input:", placeholder="Type something to test the generated prompt...")
