@@ -172,7 +172,7 @@ class PromptEngineApp:
         steps = [
             (":material/edit:", "1. Define Your Goal", "Start with a simple description of what you want your bot to accomplish"),
             (":material/tune:", "2. Refine with Tools", "Use our visual controls to set persona, format, tone, and task-specific parameters"),
-            (":material/rocket_launch:", "3. Deploy & Test", "Get your optimized prompt and test it directly in our interface")
+            (":material/rocket:", "3. Deploy & Test", "Get your optimized prompt and test it directly in our interface")
         ]
         
         cols = st.columns(3)
@@ -214,7 +214,7 @@ class PromptEngineApp:
         
         with col2:
             st.markdown("""
-            **:material/settings: Format Control**
+            **:material/settings_applications: Format Control**
             
             Ensure consistent JSON, Markdown, or custom format outputs every time.
             
@@ -302,7 +302,7 @@ class PromptEngineApp:
             'categories': ""
         }
         
-        with st.expander(":material/settings: More Settings", expanded=False):
+        with st.expander(":material/settings_applications: More Settings", expanded=False):
             st.markdown("#### :material/tune: Refinement Controls")
             
             settings.update(self._render_refinement_controls())
@@ -383,7 +383,7 @@ class PromptEngineApp:
     
     def _render_prompt_preview_and_actions(self, goal: str, context: str, settings: Dict):
         """Render prompt generation and action buttons"""
-        st.markdown("### :material/auto_fix_high: AI Prompt Generation")
+        st.markdown("### :material/animated_images: AI Prompt Generation")
         
         if goal:
             col_generate, col_save = st.columns(2)
@@ -498,7 +498,7 @@ class PromptEngineApp:
         """Render the saved prompts workspace"""
         st.markdown("""
         <div class="workspace-header">
-            <h1>:material/folder_open: My Workspace</h1>
+            <h1>:material/workspaces: My Workspace</h1>
             <p>Manage and organize your saved prompts</p>
         </div>
         """, unsafe_allow_html=True)
