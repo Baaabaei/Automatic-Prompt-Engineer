@@ -113,7 +113,7 @@ class PromptEngineApp:
             (":material/home: Home", "home"),
             (":material/login: Sign In", "login"),
             (":material/web: Blog", "blog"),
-            (":material/security: Privacy Policy", "privacy")  # Add this line
+            (":material/security: Privacy Policy", "privacy")  
         ]
         
         for label, page in nav_buttons:
@@ -127,7 +127,7 @@ class PromptEngineApp:
             (":material/Construction: Prompt Engineer", "studio"),
             (":material/folder_open: My Workspace", "workspace"),
             (":material/library_books: Templates", "templates"),
-            (":material/web: Blog", "blog")  # Add this line
+            (":material/web: Blog", "blog")  
         ]
         
         for label, page in nav_buttons:
@@ -173,9 +173,9 @@ class PromptEngineApp:
         """, unsafe_allow_html=True)
         
         steps = [
-            (":material/edit:", "1. Define Your Goal", "Start with a simple description of what you want your bot to accomplish"),
-            (":material/tune:", "2. Refine with Tools", "Use our visual controls to set persona, format, tone, and task-specific parameters"),
-            (":material/rocket:", "3. Deploy & Test", "Get your optimized prompt and test it directly in our interface")
+            ("📝", "1. Define Your Goal", "Start with a simple description of what you want your bot to accomplish"),
+            ("♻️", "2. Refine with Tools", "Use our visual controls to set persona, format, tone, and task-specific parameters"),
+            ("🚀", "3. Deploy & Test", "Get your optimized prompt and test it directly in our interface")
         ]
         
         cols = st.columns(3)
@@ -407,36 +407,30 @@ class PromptEngineApp:
                 if st.button(":material/manufacturing: Improve prompt?"): #===============================>> COLOR = GREEN / CONTINUE THE LOGIC
                     st.write("please answer these 3 questions")
                     
-                # Test the generated prompt
-                st.markdown("### :material/play_arrow: Test Generated Prompt")
-                test_input = st.text_input("Enter test input:", placeholder="Type something to test the generated prompt...")
                 
-                if st.button(":material/send: Test Prompt", use_container_width=True) and test_input:
-                    self._test_generated_prompt(st.session_state.generated_prompt, test_input, settings['output_format'])
-    
     def _generate_prompt_with_ai(self, goal: str, context: str, settings: Dict):
         """Use Ollama to generate an optimized prompt based on user inputs"""
         # Create a meta-prompt to generate the actual prompt
         meta_prompt = self._create_meta_prompt(goal, context, settings)
         
-        with st.spinner("🤖 AI is crafting your prompt..."):
+        with st.spinner("🚧 your prompt is under costruction 🚧"):
             try:
                 response = self.client.chat.completions.create(
-                    model="gemma3:1b",  # You can change this to any model you have installed
+                    model="gemma3:1b",   
                     messages=[
                         {"role": "system", "content": "You are an expert prompt engineer. Your job is to create high-quality, effective prompts based on user requirements. Always return ONLY the final prompt without any explanations or metadata."},
                         {"role": "user", "content": meta_prompt}
                     ],
-                    temperature=0.7  # Add some creativity to prompt generation
+                    temperature=0.5  # Add some creativity to prompt generation
                 )
                 
                 generated_prompt = response.choices[0].message.content.strip()
                 st.session_state.generated_prompt = generated_prompt
-                st.success("🎉 AI has generated your optimized prompt!")
+                st.success(" your optimized prompt has been generated!")
                 
             except Exception as e:
                 st.error(f"Failed to generate prompt: {e}")
-                st.info("💡 Make sure Ollama is running and the model is available")
+                st.info("  model is unavailable")
     
     def _create_meta_prompt(self, goal: str, context: str, settings: Dict) -> str:
         """Create a meta-prompt to instruct the AI on how to generate the user's prompt"""
@@ -467,35 +461,6 @@ class PromptEngineApp:
         
         return "\n".join(meta_prompt_parts)
     
-    def _test_generated_prompt(self, prompt: str, test_input: str, output_format: str):
-        """Test the generated prompt with user input"""
-        with st.spinner("Testing your generated prompt..."):
-            try:
-                response = self.client.chat.completions.create(
-                    model="gemma3:1b",
-                    messages=[
-                        {"role": "system", "content": prompt},
-                        {"role": "user", "content": test_input}
-                    ]
-                )
-                
-                st.success("✅ Test completed!")
-                st.markdown("**AI Response:**")
-                
-                if output_format == "JSON":
-                    try:
-                        st.json(json.loads(response.choices[0].message.content))
-                    except json.JSONDecodeError:
-                        st.code(response.choices[0].message.content, language="text")
-                elif output_format == "Code Block":
-                    st.code(response.choices[0].message.content, language="python")
-                elif output_format == "Markdown":
-                    st.markdown(response.choices[0].message.content)
-                else:
-                    st.code(response.choices[0].message.content, language="text")
-                    
-            except Exception as e:
-                st.error(f"Test failed: {e}")
     
     def render_workspace(self):
         """Render the saved prompts workspace"""
@@ -591,7 +556,7 @@ class PromptEngineApp:
             {
                 "id": "prompt-engineering-best-practices",
                 "title": "Prompt Engineering Best Practices for Production Systems",
-                "author": "Sarah Chen",
+                "author": "Babaei",
                 "date": "2025-08-25",
                 "category": "Best Practices",
                 "excerpt": "Learn the essential techniques for creating robust, reliable prompts that work consistently in production environments.",
@@ -632,7 +597,7 @@ class PromptEngineApp:
             {
                 "id": "json-output-reliability",
                 "title": "Ensuring Reliable JSON Output from Language Models",
-                "author": "David Kim",
+                "author": "Babaei",
                 "date": "2025-08-20",
                 "category": "Technical Guide",
                 "excerpt": "Stop dealing with malformed JSON responses. Learn proven techniques to get consistent, parseable JSON every time.",
@@ -696,7 +661,7 @@ class PromptEngineApp:
             {
                 "id": "chatbot-personality-design",
                 "title": "Designing Consistent Chatbot Personalities",
-                "author": "Maria Rodriguez", 
+                "author": "Babaei", 
                 "date": "2025-08-15",
                 "category": "UX Design",
                 "excerpt": "Create chatbots with distinctive, consistent personalities that users love to interact with.",
@@ -761,7 +726,7 @@ class PromptEngineApp:
         """Render the blog page"""
         st.markdown("""
         <div class="blog-header">
-            <h1>:material/web: Prompt Engineering Blog</h1>
+            <h1>  Prompt Engineering Blog</h1>
             <p>Expert insights, tutorials, and best practices for LLM engineering</p>
         </div>
         """, unsafe_allow_html=True)
@@ -828,7 +793,7 @@ class PromptEngineApp:
         """Render the privacy policy page"""
         st.markdown("""
         <div class="privacy-header">
-            <h1>:material/security: Privacy Policy</h1>
+            <h1> Privacy Policy</h1>
             <p>Last updated: August 30, 2025</p>
         </div>
         """, unsafe_allow_html=True)
@@ -861,13 +826,12 @@ class PromptEngineApp:
         
         You have the right to:
         - Access your personal data
-        - Correct inaccurate information
-        - Delete your account and associated data
+        - Correct inaccurate information 
         - Export your prompts and workspace data
         
         ## Cookies and Tracking
         
-        We use essential cookies for authentication and user preferences. We do not use tracking cookies for advertising purposes.
+        We do not use tracking cookies for advertising purposes.
         
         ## Changes to This Policy
         
@@ -875,11 +839,9 @@ class PromptEngineApp:
         
         ## Contact Us
         
-        If you have questions about this privacy policy, please contact us at privacy@promptengineer.com
+        If you have questions about this privacy policy, please contact us at inv.alirezababazadehzarei@gmail.com
         
-        ---
         
-        **Note**: This is a sample privacy policy. For production use, please consult with legal professionals to ensure compliance with applicable laws and regulations.
         """)
 
     
