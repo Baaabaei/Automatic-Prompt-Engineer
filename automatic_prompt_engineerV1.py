@@ -5,6 +5,7 @@ from datetime import datetime
 import uuid
 from openai import OpenAI
 from typing import Dict, List, Tuple, Optional
+import os
 
 # Configure the page
 st.set_page_config(
@@ -83,7 +84,7 @@ class PromptEngineApp:
     def _load_css(self):
         """Load custom CSS styling"""
         try:
-            with open('Desktop/prompt_engineer/assets/styl.css') as f:
+            with open('Desktop/prompt_engineer/assets/styl.css') as f: #==========================> must be changeable
                 st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
         except FileNotFoundError:
             st.warning("CSS file not found. Using default styling.")
@@ -147,7 +148,7 @@ class PromptEngineApp:
         st.markdown("""
         <div class="hero-section">
             <div class="hero-content">
-                <h1 class="hero-title">Build Production-Ready Prompts for Your Bots in Minutes</h1>
+                <h1 class="hero-title">Make Most Efficient Prompts for Your Bots in Minutes</h1>
                 <p class="hero-subtitle">Stop the trial-and-error. Stop getting inconsistent JSON. Transform your prompt engineering workflow with our visual studio.</p>
             </div>
         </div>
@@ -173,17 +174,17 @@ class PromptEngineApp:
         """, unsafe_allow_html=True)
         
         steps = [
-            ("📝", "1. Define Your Goal", "Start with a simple description of what you want your bot to accomplish"),
-            ("♻️", "2. Refine with Tools", "Use our visual controls to set persona, format, tone, and task-specific parameters"),
-            ("🚀", "3. Deploy & Test", "Get your optimized prompt and test it directly in our interface")
+            ( "1. Define Your Goal", "Start with a simple description of what you want your bot to accomplish"),
+            ( "2. Refine with Tools", "Use our visual controls to set persona, format, tone, and task-specific parameters"),
+            ( "3. Deploy & Test", "Get your optimized prompt and test it directly in our interface")
         ]
         
         cols = st.columns(3)
-        for i, (icon, title, description) in enumerate(steps):
+        for i, ( title, description) in enumerate(steps):
             with cols[i]:
                 st.markdown(f"""
                 <div class="feature-card">
-                    <div class="feature-icon">{icon}</div>
+                    <div class="feature-icon"></div>
                     <h3>{title}</h3>
                     <p>{description}</p>
                 </div>
@@ -256,8 +257,8 @@ class PromptEngineApp:
                     if email and password:
                         st.session_state.logged_in = True
                         st.session_state.current_page = 'studio'
-                        st.success("Welcome to Prompt Engineer Studio!")
-                        time.sleep(1)
+                        # st.success("Welcome to Prompt Engineer Studio!")
+                        time.sleep(0.5)
                         st.rerun()
                     else:
                         st.error("Please enter both email and password")
@@ -276,11 +277,12 @@ class PromptEngineApp:
         
         with col1:
             goal = self._render_goal_input()
-            settings = self._render_more_settings()
         
         with col2:
             context = self._render_context_input()
-        
+
+        settings = self._render_more_settings()
+
         self._render_prompt_preview_and_actions(goal, context, settings)
         
     def _render_goal_input(self) -> str:
