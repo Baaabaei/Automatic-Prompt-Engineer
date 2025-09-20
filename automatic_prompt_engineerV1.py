@@ -83,11 +83,11 @@ class PromptEngineApp:
     
     def _load_css(self):
         """Load custom CSS styling"""
-        try:
-            with open('Desktop/prompt_engineer/assets/styl.css') as f: #==========================> must be changeable
-                st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-        except FileNotFoundError:
-            st.warning("CSS file not found. Using default styling.")
+        # try:
+        with open('Desktop/prompt_engineer/assets/styl.css') as f: #==========================> must be changeable
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+        # except FileNotFoundError:
+        #     st.warning("CSS file not found. Using default styling.")
     
     def render_sidebar(self):
         """Render the sidebar navigation"""
@@ -225,10 +225,7 @@ class PromptEngineApp:
             **:material/psychology: Persona Management**
             
             Fine-tune your bot's personality and expertise level with precision.
-            
-            **:material/speed: Live Testing**
-            
-            Test your prompts directly in the platform before deploying to production.
+             
             """)
     
     def render_login(self):
@@ -281,9 +278,15 @@ class PromptEngineApp:
         with col2:
             context = self._render_context_input()
 
+        user_old_prompt = self._render_old_user_prompt()
+        
         settings = self._render_more_settings()
-
-        self._render_prompt_preview_and_actions(goal, context, settings)
+        
+        if user_old_prompt:
+            formatted_old_prompt = goal + "I already have a prompt, please improve it for me, my Current prompt is: \n" + user_old_prompt 
+            self._render_prompt_preview_and_actions(formatted_old_prompt, context, settings)
+        else:
+            self._render_prompt_preview_and_actions(goal, context, settings)
         
     def _render_goal_input(self) -> str:
         """Render the goal input section"""
@@ -294,6 +297,15 @@ class PromptEngineApp:
             height=100,
             key="goal_input"
         )
+    def _render_old_user_prompt(self) -> str:
+        """Ask user for their current prompt to improve"""
+        if st.checkbox("Already have a prompt?",help= "if you already have a prompt, you can add it here to improve "):
+            return st.text_area(
+                "Import your current prompt to improve",
+                placeholder="Your current prompt",
+                height=100,
+                key = "old_user_prompt"
+            )
     
     def _render_more_settings(self) -> Dict:
         """Render the collapsible more settings section"""
@@ -332,6 +344,24 @@ class PromptEngineApp:
             )
             if persona == "Custom...":
                 persona = st.text_input("Custom persona", placeholder="Act as a...")
+
+
+            domain = st.selectbox(
+                ":material/domain: Domain",
+                ["Customer Support", "Healthcare", "Education", 
+                 "Legal", "Finance", "Content Creation", "E-commerce", "Travel and Hospitality", "Custom..."],
+                key="domain_select"
+            )
+            if domain == "Custom...":
+                domain = st.text_input("Custom persona", placeholder="Act as a...")
+            
+
+            output_format = st.selectbox(
+                ":material/code: Output Format",
+                ["Plain Text", "JSON", "Markdown", "Code Block", "XML", "CSV"],
+                key="format_select"
+            )
+
         
         with col_b:
             tone = st.selectbox(
@@ -339,12 +369,13 @@ class PromptEngineApp:
                 ["Professional", "Friendly", "Technical", "Casual", "Formal"],
                 key="tone_select"
             )
-        
-        output_format = st.selectbox(
-            ":material/code: Output Format",
-            ["Plain Text", "JSON", "Markdown", "Code Block", "XML", "CSV"],
-            key="format_select"
-        )
+
+            LLM = st.selectbox(
+                ":material/graph_5: LLM",
+                ["Chat_GPT", "Gemini", "Claude", "Deep Seek", "Grok", "Llama"],
+                key="model_select"
+            )
+            
         
         return {
             'persona': persona,
@@ -468,7 +499,7 @@ class PromptEngineApp:
         """Render the saved prompts workspace"""
         st.markdown("""
         <div class="workspace-header">
-            <h1>:material/workspaces: My Workspace</h1>
+            <h1> My Workspace</h1>
             <p>Manage and organize your saved prompts</p>
         </div>
         """, unsafe_allow_html=True)
@@ -482,7 +513,7 @@ class PromptEngineApp:
         """Render empty workspace state"""
         st.markdown("""
         <div class="empty-state">
-            <div class="empty-icon">:material/folder_off:</div>
+            <div class="empty-icon"></div>
             <h3>No prompts saved yet</h3>
             <p>Create your first prompt in the Prompt Studio to get started.</p>
         </div>
