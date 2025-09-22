@@ -443,9 +443,12 @@ class PromptEngineApp:
                 
     def _generate_prompt_with_ai(self, goal: str, context: str, settings: Dict):
         """Use Ollama to generate an optimized prompt based on user inputs"""
+        rag_query = f"best practices for {settings.get('domain', 'general')} prompts with {settings['output_format']} format"
+        relevant_techniques = self.rag_system.query(rag_query, top_k=3)
+    
         # Create a meta-prompt to generate the actual prompt
-        meta_prompt = self._create_meta_prompt(goal, context, settings)
-        
+        meta_prompt = self._create_enhanced_meta_prompt(goal, context, settings, relevant_techniques)
+    
         with st.spinner("🚧 your prompt is under costruction 🚧"):
             try:
                 response = self.client.chat.completions.create(
