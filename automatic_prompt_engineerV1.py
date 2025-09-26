@@ -23,6 +23,7 @@ class PromptEngineApp:
         self.blog_posts = self._init_blog_posts()  # Add this line
         self.client = self._init_openai()
         self._init_session_state()
+        # self.rag_system = SimpleRAGSystem()   
     
     def _init_template_library(self) -> Dict:
         """Initialize the template library"""
@@ -259,8 +260,8 @@ class PromptEngineApp:
                         st.rerun()
                     else:
                         st.error("Please enter both email and password")
-    
-    def render_prompt_studio(self):
+ 
+    def render_prompt_studio(self): 
         """Main prompt engineering interface"""
         st.header(":material/construction: Prompt Engineer", divider=True)
         st.markdown("""
@@ -425,13 +426,13 @@ class PromptEngineApp:
             col_generate, col_save = st.columns(2)
             
             with col_generate:
-                if st.button(":material/psychology: Generate Prompt with AI", use_container_width=True):
+                if st.button(":material/psychology: Generate Prompt with AI", use_container_width=True, type= "primary"):
                     self._generate_prompt_with_ai(goal, context, settings)
             
             # Show generated prompt if it exists
             if 'generated_prompt' in st.session_state and st.session_state.generated_prompt:
                 st.markdown("### :material/preview: Generated Prompt")
-                st.code(st.session_state.generated_prompt, language="text")
+                st.code(st.session_state.generated_prompt, language="text", height= 500, width="stretch")
                 
                 with col_save:
                     if st.button(":material/save: Save Generated Prompt", use_container_width=True):
@@ -439,16 +440,13 @@ class PromptEngineApp:
                 
                 if st.button(":material/manufacturing: Improve prompt?"): #===============================>> COLOR = GREEN / CONTINUE THE LOGIC
                     st.write("please answer these 3 questions")
-                    
-                
+                      
+
     def _generate_prompt_with_ai(self, goal: str, context: str, settings: Dict):
         """Use Ollama to generate an optimized prompt based on user inputs"""
-        rag_query = f"best practices for {settings.get('domain', 'general')} prompts with {settings['output_format']} format"
-        relevant_techniques = self.rag_system.query(rag_query, top_k=3)
-    
         # Create a meta-prompt to generate the actual prompt
-        meta_prompt = self._create_enhanced_meta_prompt(goal, context, settings, relevant_techniques)
-    
+        meta_prompt = self._create_meta_prompt(goal, context, settings)
+        
         with st.spinner("🚧 your prompt is under costruction 🚧"):
             try:
                 response = self.client.chat.completions.create(
@@ -467,6 +465,7 @@ class PromptEngineApp:
             except Exception as e:
                 st.error(f"Failed to generate prompt: {e}")
                 st.info("  model is unavailable")
+    
     
     def _create_meta_prompt(self, goal: str, context: str, settings: Dict) -> str:
         """Create a meta-prompt to instruct the AI on how to generate the user's prompt"""
