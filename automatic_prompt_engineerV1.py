@@ -6,7 +6,21 @@ import uuid
 from openai import OpenAI
 from typing import Dict, List, Tuple, Optional
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
+
+from blog_data import blog_posts, privacy_policy, terms_of_service
+
+# Email configuration (add after imports)
+EMAIL_CONFIG = {
+    'smtp_server': 'smtp.gmail.com',  # Change based on your email provider
+    'smtp_port': 587,
+    'sender_email': 'prompt.engineer.mail@gmail.com',   
+    'sender_password': 'prompt engineer_C137',  
+    'receiver_email': 'inv.alirezababazadehzarei@gmail.com'
+}
 # Configure the page
 st.set_page_config(
     page_title="Prompt Engineer",
@@ -115,7 +129,8 @@ class PromptEngineApp:
             (":material/home: Home", "home"),
             (":material/login: Sign In", "login"),
             (":material/web: Blog", "blog"),
-            (":material/security: Privacy Policy", "privacy")  
+            (":material/feedback: Feedback", "feedback"),
+            # (":material/security: Privacy Policy", "privacy")  
         ]
         
         for label, page in nav_buttons:
@@ -129,7 +144,8 @@ class PromptEngineApp:
             (":material/Construction: Prompt Engineer", "studio"),
             (":material/folder_open: My Workspace", "workspace"),
             (":material/library_books: Templates", "templates"),
-            (":material/web: Blog", "blog")  
+            (":material/web: Blog", "blog"),
+            (":material/feedback: Feedback", "feedback")  
         ]
         
         for label, page in nav_buttons:
@@ -163,6 +179,24 @@ class PromptEngineApp:
         
         self._render_how_it_works()
         self._render_features_overview()
+
+    def render_footer(self):
+        """Render footer with privacy policy link"""
+        st.markdown("---")
+        
+        st.markdown(f"""
+        <div style="text-align: center; padding: 20px 0; color: #666;">
+            <p>© 2025 Prompt Engineer. All rights reserved.</p>
+            <p style="margin-top: 10px;">
+                <a href="?page=privacy" style="color: #666; text-decoration: none; margin: 0 15px; cursor: pointer; transition: color 0.3s;" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#666'">Privacy Policy</a> • 
+                <a href="?page=terms" style="color: #666; text-decoration: none; margin: 0 15px; cursor: pointer; transition: color 0.3s;" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#666'">Terms of Service</a> • 
+                <a href="?page=feedback" style="color: #666; text-decoration: none; margin: 0 15px; cursor: pointer; transition: color 0.3s;" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#666'">Contact</a> • 
+                <a href="mailto:inv.alirezababazadehzarei@gmail.com" style="color: #666; text-decoration: none; margin: 0 15px;">Email Us</a>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+         
     
     def _render_how_it_works(self):
         """Render the how it works section"""
@@ -441,7 +475,15 @@ class PromptEngineApp:
                 if st.button(":material/manufacturing: Improve prompt?"): #===============================>> COLOR = GREEN / CONTINUE THE LOGIC
                     st.write("please answer these 3 questions")
                       
-
+    def render_terms_of_service(self):
+        """Render the terms of service page"""
+        st.markdown("""
+        <div class="terms-header">
+            <h1> Terms of Service</h1>
+            <p>Last updated: August 30, 2025</p>
+        </div>
+        """, unsafe_allow_html=True) 
+        st.markdown(terms_of_service)
     def _generate_prompt_with_ai(self, goal: str, context: str, settings: Dict):
         """Use Ollama to generate an optimized prompt based on user inputs"""
         # Create a meta-prompt to generate the actual prompt
@@ -483,20 +525,94 @@ class PromptEngineApp:
         if settings['tone'] != "Professional":
             meta_prompt_parts.append(f"\nTONE: Use a {settings['tone'].lower()} tone")
         
-        if settings['output_format'] != "Plain Text":
-            meta_prompt_parts.append(f"\nOUTPUT FORMAT: Response must be in {settings['output_format']} format")
+            if settings['output_format'] != "Plain Text":
+                meta_prompt_parts.append(f"\nOUTPUT FORMAT: Response must be in {settings['output_format']} format")
+            
+            if settings['data_extraction'] and settings['extraction_fields']:
+                meta_prompt_parts.append(f"\nDATA EXTRACTION: Must extract these fields: {settings['extraction_fields']}")
+            
+            if settings['classification'] and settings['categories']:
+                meta_prompt_parts.append(f"\nCLASSIFICATION: Must classify into these categories: {settings['categories']}")
+            
+            meta_prompt_parts.append("\nCreate a clear, specific, and effective prompt that will reliably achieve the stated goal. Include all necessary instructions and constraints.")
+            
+            return "\n".join(meta_prompt_parts)
         
-        if settings['data_extraction'] and settings['extraction_fields']:
-            meta_prompt_parts.append(f"\nDATA EXTRACTION: Must extract these fields: {settings['extraction_fields']}")
+    def _send_feedback_email(self, name: str, email: str, feedback_type: str, message: str) -> bool:
+        """Send feedback email"""
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = EMAIL_CONFIG['sender_email']
+            msg['To'] = EMAIL_CONFIG['receiver_email']
+            msg['Subject'] = f"Prompt Engineer Feedback: {feedback_type}"
+            
+            body = f"""
+            New feedback received from Prompt Engineer App:
+            
+            Name: {name}
+            Email: {email}
+            Type: {feedback_type}
+            
+            Message:
+            {message}
+            
+            Sent at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+            """
+            
+            msg.attach(MIMEText(body, 'plain'))
+            
+            with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
+                server.starttls()
+                server.login(EMAIL_CONFIG['sender_email'], EMAIL_CONFIG['sender_password'])
+                server.send_message(msg)
+            
+            return True
+        except Exception as e:
+            st.error(f"Failed to send feedback: {str(e)}")
+            return False
+
+    def render_feedback(self):
+        """Render the feedback page"""
+        st.markdown("""
+        <div class="feedback-header">
+            <h1>📧 Send Feedback</h1>
+            <p>We'd love to hear from you! Share your thoughts, report bugs, or suggest features.</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        if settings['classification'] and settings['categories']:
-            meta_prompt_parts.append(f"\nCLASSIFICATION: Must classify into these categories: {settings['categories']}")
+        col1, col2, col3 = st.columns([1, 2, 1])
         
-        meta_prompt_parts.append("\nCreate a clear, specific, and effective prompt that will reliably achieve the stated goal. Include all necessary instructions and constraints.")
-        
-        return "\n".join(meta_prompt_parts)
-    
-    
+        with col2:
+            with st.form("feedback_form"):
+                name = st.text_input("Name", placeholder="Your name")
+                email = st.text_input("Email", placeholder="your.email@example.com")
+                
+                feedback_type = st.selectbox(
+                    "Feedback Type",
+                    ["Bug Report", "Feature Request", "General Feedback", "Question"]
+                )
+                
+                message = st.text_area(
+                    "Your Message",
+                    placeholder="Tell us what's on your mind...",
+                    height=200
+                )
+                
+                submitted = st.form_submit_button("📤 Send Feedback", use_container_width=True)
+                
+                if submitted:
+                    if not name or not email or not message:
+                        st.error("Please fill in all required fields")
+                    elif '@' not in email:
+                        st.error("Please enter a valid email address")
+                    else:
+                        with st.spinner("Sending feedback..."):
+                            if self._send_feedback_email(name, email, feedback_type, message):
+                                st.success("✅ Thank you! Your feedback has been sent successfully.")
+                                time.sleep(2)
+                                st.rerun()
+                            else:
+                                st.error("Failed to send feedback. Please try again later.")
     def render_workspace(self):
         """Render the saved prompts workspace"""
         st.markdown("""
@@ -587,175 +703,7 @@ class PromptEngineApp:
         
     def _init_blog_posts(self) -> List[Dict]:
         """Initialize blog posts data"""
-        return [
-            {
-                "id": "prompt-engineering-best-practices",
-                "title": "Prompt Engineering Best Practices for Production Systems",
-                "author": "Babaei",
-                "date": "2025-08-25",
-                "category": "Best Practices",
-                "excerpt": "Learn the essential techniques for creating robust, reliable prompts that work consistently in production environments.",
-                "content": """
-    # Prompt Engineering Best Practices for Production Systems
-
-    When building AI-powered applications, the quality of your prompts directly impacts the reliability and effectiveness of your system. Here are the key principles we've learned from deploying hundreds of production prompts.
-
-    ## 1. Be Specific and Clear
-
-    Vague prompts lead to inconsistent outputs. Instead of "analyze this data," specify exactly what type of analysis you want:
-    - What metrics should be calculated?
-    - What format should the output take?
-    - What edge cases should be handled?
-
-    ## 2. Include Examples
-
-    Few-shot learning dramatically improves prompt performance. Always include 2-3 examples of the desired input-output pairs.
-
-    ## 3. Handle Edge Cases
-
-    Production systems encounter unexpected inputs. Your prompts should explicitly handle:
-    - Empty or malformed data
-    - Ambiguous requests
-    - Out-of-scope queries
-
-    ## 4. Test Thoroughly
-
-    Before deploying, test your prompts with:
-    - Typical use cases
-    - Edge cases
-    - Adversarial inputs
-    - Different input lengths
-
-    Remember: A well-engineered prompt is the foundation of a reliable AI system.
-                """
-            },
-            {
-                "id": "json-output-reliability",
-                "title": "Ensuring Reliable JSON Output from Language Models",
-                "author": "Babaei",
-                "date": "2025-08-20",
-                "category": "Technical Guide",
-                "excerpt": "Stop dealing with malformed JSON responses. Learn proven techniques to get consistent, parseable JSON every time.",
-                "content": """
-    # Ensuring Reliable JSON Output from Language Models
-
-    One of the biggest challenges in production LLM systems is getting consistent, well-formed JSON output. Here's how to solve this problem.
-
-    ## The Problem
-
-    Language models sometimes return:
-    - Malformed JSON with syntax errors
-    - Extra text before or after the JSON
-    - Inconsistent field names or structures
-    - Missing required fields
-
-    ## Solution 1: Explicit Format Instructions
-
-    Always specify the exact JSON structure you want:
-
-    ```
-    Return your response as valid JSON with this exact structure:
-    {
-    "category": "string",
-    "confidence": "number between 0 and 1",
-    "explanation": "string"
-    }
-
-    Do not include any text before or after the JSON.
-    ```
-
-    ## Solution 2: Use Schema Definitions
-
-    Define your expected schema clearly:
-
-    ```
-    Required fields:
-    - "name" (string): Full name
-    - "email" (string): Email address
-    - "priority" (string): One of "high", "medium", "low"
-
-    Optional fields:
-    - "notes" (string): Additional comments
-    ```
-
-    ## Solution 3: Validation Prompts
-
-    Include validation instructions:
-
-    ```
-    Before responding, verify that your JSON:
-    1. Has valid syntax
-    2. Includes all required fields
-    3. Uses correct data types
-    4. Contains no extra text
-    ```
-
-    These techniques have reduced our JSON parsing errors by over 95% in production.
-                """
-            },
-            {
-                "id": "chatbot-personality-design",
-                "title": "Designing Consistent Chatbot Personalities",
-                "author": "Babaei", 
-                "date": "2025-08-15",
-                "category": "UX Design",
-                "excerpt": "Create chatbots with distinctive, consistent personalities that users love to interact with.",
-                "content": """
-    # Designing Consistent Chatbot Personalities
-
-    Your chatbot's personality is crucial for user engagement and brand consistency. Here's how to design and maintain a compelling bot personality.
-
-    ## Define Core Traits
-
-    Start with 3-5 core personality traits:
-    - Professional but approachable
-    - Knowledgeable without being condescending  
-    - Patient and helpful
-    - Slightly humorous when appropriate
-    - Proactive in offering assistance
-
-    ## Create a Personality Document
-
-    Document specific behaviors:
-    - How does your bot greet users?
-    - What tone does it use for different situations?
-    - How does it handle errors or confusion?
-    - What phrases or expressions are characteristic?
-
-    ## Consistency Techniques
-
-    Use these prompt engineering techniques for consistency:
-
-    ### 1. Role Definition
-    ```
-    You are Alex, a friendly technical support specialist with 5 years of experience. 
-    You're patient, thorough, and enjoy helping people solve complex problems.
-    ```
-
-    ### 2. Behavioral Guidelines
-    ```
-    Communication style:
-    - Use casual but professional language
-    - Ask clarifying questions when needed
-    - Acknowledge user frustration empathetically
-    - Celebrate successful solutions
-    ```
-
-    ### 3. Response Templates
-    Create templates for common scenarios to maintain consistency across interactions.
-
-    ## Testing Personality Consistency
-
-    Regular testing ensures your bot maintains its personality:
-    - Test with different user moods (frustrated, excited, confused)
-    - Verify responses across various topics
-    - Check for personality drift over long conversations
-
-    A well-designed personality makes your chatbot memorable and trustworthy.
-                """
-            }
-        ]
-
+        return blog_posts
         
     def render_blog(self):
         """Render the blog page"""
@@ -833,60 +781,24 @@ class PromptEngineApp:
         </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("""
-        ## Information We Collect
-        
-        **Account Information**: When you create an account, we collect your email address and any profile information you provide.
-        
-        **Usage Data**: We collect information about how you use our service, including prompts created, templates used, and feature interactions.
-        
-        **Technical Data**: We automatically collect IP addresses, browser information, and device identifiers for security and performance purposes.
-        
-        ## How We Use Your Information
-        
-        - **Service Provision**: To provide and improve our prompt engineering tools
-        - **Account Management**: To manage your account and provide customer support
-        - **Analytics**: To understand usage patterns and improve our service
-        - **Security**: To protect against fraud and unauthorized access
-        
-        ## Data Storage and Security
-        
-        **Local Processing**: Your prompts and data are processed locally when possible. We use industry-standard encryption for data transmission and storage.
-        
-        **Third-Party Services**: We may use third-party services (like OpenAI/Ollama) for AI processing. These services have their own privacy policies.
-        
-        **Retention**: We retain your data for as long as your account is active, plus a reasonable period for backup purposes.
-        
-        ## Your Rights
-        
-        You have the right to:
-        - Access your personal data
-        - Correct inaccurate information 
-        - Export your prompts and workspace data
-        
-        ## Cookies and Tracking
-        
-        We do not use tracking cookies for advertising purposes.
-        
-        ## Changes to This Policy
-        
-        We may update this privacy policy from time to time. We will notify users of significant changes via email or in-app notifications.
-        
-        ## Contact Us
-        
-        If you have questions about this privacy policy, please contact us at inv.alirezababazadehzarei@gmail.com
-        
-        
-        """)
+        st.markdown(privacy_policy)
 
-    
+    def _handle_query_params(self):
+        """Handle URL query parameters for navigation"""
+        query_params = st.query_params
+        if 'page' in query_params:  
+            page = query_params['page']
+            if page in ['home', 'login', 'studio', 'workspace', 'templates', 'blog', 'privacy', 'feedback', 'terms']:
+                st.session_state.current_page = page
+        
     def run(self):
         """Main application entry point"""
         try:
             self._load_css()
         except:
             pass
-            
+        
+        self._handle_query_params()
         self.render_sidebar()
         
         # Route to appropriate page
@@ -896,14 +808,17 @@ class PromptEngineApp:
             'studio': self.render_prompt_studio,
             'workspace': self.render_workspace,
             'templates': self.render_templates,
-            'blog': self.render_blog,           # Add this line
-            'blog_post': self.render_blog_post, # Add this line
-            'privacy': self.render_privacy_policy  # Add this line
+            'blog': self.render_blog,           
+            'blog_post': self.render_blog_post, 
+            'privacy': self.render_privacy_policy,   
+            'terms':self.render_terms_of_service,
+            'feedback': self.render_feedback
         }
         
         current_page = st.session_state.current_page
         if current_page in page_routes:
             page_routes[current_page]()
+            self.render_footer()
         else:
             st.error(f"Unknown page: {current_page}")
 
