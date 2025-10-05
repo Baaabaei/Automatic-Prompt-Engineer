@@ -82,7 +82,7 @@ class PromptEngineApp:
             return None
         
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel('gemini-1.5-flash')   
+        return genai.GenerativeModel('models/gemini-2.5-pro')   
     def _init_session_state(self):
         """Initialize session state variables"""
         defaults = {
