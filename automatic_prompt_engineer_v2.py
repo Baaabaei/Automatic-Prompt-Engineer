@@ -1,7 +1,6 @@
 import streamlit as st 
 import time
 from datetime import datetime 
-from openai import OpenAI
 from typing import Dict, List, Tuple, Optional 
 import smtplib
 from email.mime.text import MIMEText
