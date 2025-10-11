@@ -1,6 +1,7 @@
 import streamlit as st 
 import time
 from datetime import datetime 
+from openai import OpenAI
 from typing import Dict, List, Tuple, Optional 
 import smtplib
 from email.mime.text import MIMEText
@@ -82,7 +83,7 @@ class PromptEngineApp:
             return None
         
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel('models/gemini-2.5-pro')   
+        return genai.GenerativeModel('gemini-1.5-flash')   
     def _init_session_state(self):
         """Initialize session state variables"""
         defaults = {
@@ -508,34 +509,63 @@ class PromptEngineApp:
                 st.info("💡 Model is unavailable or rate limit exceeded")
     
     def _create_meta_prompt(self, goal: str, context: str, settings: Dict) -> str:
-        """Create a meta-prompt to instruct the AI on how to generate the user's prompt"""
+        """Create a professional meta-prompt to generate high-quality user prompts"""
+        
         meta_prompt_parts = []
         
-        meta_prompt_parts.append("Create a professional, effective prompt based on these requirements:")
-        meta_prompt_parts.append(f"\nGOAL: {goal}")
+        meta_prompt_parts.append("""You are an expert prompt engineer specializing in creating world-class prompts for AI systems.
+
+    Your task is to create ONE optimized prompt that will be used directly with an AI model.
+
+    IMPORTANT RULES:
+    - Return ONLY the final prompt, no explanations, no metadata, no preamble
+    - Make the prompt clear, specific, and actionable
+    - Include all necessary context and constraints
+    - The prompt should be self-contained and work immediately
+    - Use best practices for prompt engineering""")
         
-        if context:
-            meta_prompt_parts.append(f"\nCONTEXT TO INCLUDE: {context}")
+        meta_prompt_parts.append(f"\n\n=== USER REQUIREMENTS ===")
+        meta_prompt_parts.append(f"\nPRIMARY GOAL:\n{goal}")
         
-        if settings['persona'] != "Helpful assistant":
-            meta_prompt_parts.append(f"\nPERSONA: The AI should act as {settings['persona'].lower()}")
+        if context and context.strip():
+            meta_prompt_parts.append(f"\n\nCONTEXT & REFERENCE MATERIAL:\n{context}")
         
-        if settings['tone'] != "Professional":
-            meta_prompt_parts.append(f"\nTONE: Use a {settings['tone'].lower()} tone")
+        meta_prompt_parts.append(f"\n\n=== PROMPT SPECIFICATIONS ===")
+        meta_prompt_parts.append(f"\nPERSONA: {settings['persona']}")
+        meta_prompt_parts.append(f"TONE: {settings['tone']}")
+        meta_prompt_parts.append(f"OUTPUT FORMAT: {settings['output_format']}")
         
-            if settings['output_format'] != "Plain Text":
-                meta_prompt_parts.append(f"\nOUTPUT FORMAT: Response must be in {settings['output_format']} format")
+        if settings.get('domain') and settings['domain'] not in ["Custom...", "Customer Support"]:
+            meta_prompt_parts.append(f"DOMAIN/INDUSTRY: {settings['domain']}")
+        
+        meta_prompt_parts.append(f"\n\n=== TASK-SPECIFIC REQUIREMENTS ===")
+        
+        if settings.get('data_extraction') and settings.get('extraction_fields'):
+            meta_prompt_parts.append(f"\n✓ DATA EXTRACTION MODE ENABLED")
+            meta_prompt_parts.append(f"  Extract these fields: {settings['extraction_fields']}")
+            meta_prompt_parts.append(f"  Include validation and error handling")
+        
+        if settings.get('classification') and settings.get('categories'):
+            meta_prompt_parts.append(f"\n✓ CLASSIFICATION MODE ENABLED")
+            meta_prompt_parts.append(f"  Categories to classify into: {settings['categories']}")
+            meta_prompt_parts.append(f"  Include confidence scores or reasoning")
+        
+        if not settings.get('data_extraction') and not settings.get('classification'):
+            meta_prompt_parts.append(f"\n✓ STANDARD RESPONSE MODE")
+        
+        meta_prompt_parts.append(f"\n\n=== QUALITY GUIDELINES ===")
+        meta_prompt_parts.append("""
+    - Be explicit about expected input/output
+    - Include examples if helpful
+    - Add error handling instructions
+    - Set clear boundaries and constraints
+    - Include success criteria where applicable
+    - Optimize for consistency and reliability
+
+    Now create the optimized prompt:""")
+        
+        return "\n".join(meta_prompt_parts)
             
-            if settings['data_extraction'] and settings['extraction_fields']:
-                meta_prompt_parts.append(f"\nDATA EXTRACTION: Must extract these fields: {settings['extraction_fields']}")
-            
-            if settings['classification'] and settings['categories']:
-                meta_prompt_parts.append(f"\nCLASSIFICATION: Must classify into these categories: {settings['categories']}")
-            
-            meta_prompt_parts.append("\nCreate a clear, specific, and effective prompt that will reliably achieve the stated goal. Include all necessary instructions and constraints.")
-            
-            return "\n".join(meta_prompt_parts)
-        
     def _send_feedback_email(self, name: str, email: str, feedback_type: str, message: str) -> bool:
         """Send feedback email"""
         try:
